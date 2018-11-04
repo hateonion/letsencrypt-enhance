@@ -10,10 +10,10 @@ server {
 
 # main server block
 server {
-	listen 443 ssl default_server;
+	listen 443 ssl http2 default_server;
 
-	root /config/www;
-	index index.html index.htm index.php;
+	root /usr/nginx/share/html;
+	index index.html;
 
 	server_name _;
 
@@ -32,12 +32,30 @@ server {
 		try_files $uri $uri/ /index.html /index.php?$args =404;
 	}
 
-	location ~ \.php$ {
-		fastcgi_split_path_info ^(.+\.php)(/.+)$;
-		fastcgi_pass 127.0.0.1:9000;
-		fastcgi_index index.php;
-		include /etc/nginx/fastcgi_params;
-	}
+  location ~* \.(?:manifest|appcache|html?|xml|json)$ {
+    expires -1;
+    # access_log logs/static.log; # I don't usually include a static log
+  }
+
+  # Feed
+  location ~* \.(?:rss|atom)$ {
+    expires 1h;
+    add_header Cache-Control "public";
+  }
+
+  # Media: images, icons, video, audio, HTC
+  location ~* \.(?:jpg|jpeg|gif|png|ico|cur|gz|svg|svgz|mp4|ogg|ogv|webm|htc)$ {
+    expires 1M;
+    access_log off;
+    add_header Cache-Control "public";
+  }
+
+  # CSS and Javascript
+  location ~* \.(?:css|js)$ {
+    expires 1y;
+    access_log off;
+    add_header Cache-Control "public";
+  }
 
 # sample reverse proxy config for password protected couchpotato running at IP 192.168.1.50 port 5050 with base url "cp"
 # notice this is within the same server block as the base
